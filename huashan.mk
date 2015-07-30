@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Perfd
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.extension_library=libqti-perfd-client.so
+
 # inherit from msm8960-common
 $(call inherit-product, device/sony/msm8960-common/msm8960.mk)
 
@@ -199,6 +203,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=320 \
     debug.composition.type=c2d
+
+# DRM
+PRODUCT_PROPERTY_OVERRIDES += \
+    drm.service.enabled=true
 
 # Audio
 PRODUCT_PROPERTY_OVERRIDES += \

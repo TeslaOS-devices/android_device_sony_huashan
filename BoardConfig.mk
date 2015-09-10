@@ -12,10 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# inherit from msm8960-common
-include device/sony/msm8960-common/BoardConfigCommon.mk
+# Inherit from Sony common
+include device/sony/common/BoardConfigCommon.mk
 
 TARGET_SPECIFIC_HEADER_PATH += device/sony/huashan/include
+
+# Architecture
+TARGET_ARCH := arm
+TARGET_CPU_ABI := armeabi-v7a
+TARGET_CPU_ABI2 := armeabi
+TARGET_ARCH_VARIANT := armv7-a-neon
+TARGET_CPU_VARIANT := krait
 
 # Kernel properties
 TARGET_KERNEL_SOURCE := kernel/sony/msm8x60
@@ -23,6 +30,7 @@ TARGET_KERNEL_CONFIG := cm_viskan_huashan_defconfig
 
 # Platform
 TARGET_BOOTLOADER_BOARD_NAME := MSM8960
+TARGET_BOARD_PLATFORM := msm8960
 BOARD_VENDOR_PLATFORM := viskan
 
 # Kernel information
@@ -31,11 +39,27 @@ BOARD_KERNEL_PAGESIZE := 2048
 BOARD_KERNEL_CMDLINE  := androidboot.hardware=qcom user_debug=31 androidboot.baseband=msm msm_rtb.filter=0x3F ehci-hcd.park=3 vmalloc=400M
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x02000000
 
+TARGET_NO_BOOTLOADER := true
+TARGET_NO_RADIOIMAGE := true
+
 # Time
 BOARD_USES_QC_TIME_SERVICES := true
 
 # Dumpstate
 BOARD_LIB_DUMPSTATE := libdumpstate.sony
+
+# Bionic
+MALLOC_IMPL := dlmalloc
+
+# Enable dex-preoptimization to speed up first boot sequence
+ifeq ($(HOST_OS),linux)
+  ifeq ($(TARGET_BUILD_VARIANT),userdebug)
+   ifeq ($(WITH_DEXPREOPT),)
+    WITH_DEXPREOPT := true
+    WITH_DEXPREOPT_BOOT_IMG_ONLY := false
+   endif
+  endif
+endif
 
 # Wifi
 BOARD_HAS_QCOM_WLAN              := true
@@ -54,17 +78,23 @@ BOARD_USE_SONY_MACUPDATE := true
 
 BOARD_HARDWARE_CLASS := device/sony/huashan/cmhw
 
+BOARD_USES_QCOM_HARDWARE := true
+
 # Camera
+TARGET_PROVIDES_CAMERA_HAL := true
 USE_DEVICE_SPECIFIC_CAMERA := true
 
 # GPS
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := $(TARGET_BOARD_PLATFORM)
 TARGET_NO_RPC := true
 
+# Lights HAL
+TARGET_PROVIDES_LIBLIGHT := true
+
 # Sensors
 SOMC_CFG_SENSORS := true
 SOMC_CFG_SENSORS_ACCELEROMETER_LSM303DLHC_LT := yes
-SOMC_CFG_SENSORS_COMPASS_AK8963 := yes
+SOMC_CFG_SENSORS_COMPASS_AKM8963 := yes
 SOMC_CFG_SENSORS_COMPASS_LSM303DLHC := yes
 SOMC_CFG_SENSORS_GYRO_L3GD20 := yes
 SOMC_CFG_SENSORS_LIGHT_AS3677 := yes
@@ -73,10 +103,27 @@ SOMC_CFG_SENSORS_LIGHT_MAXRANGE := 12276
 SOMC_CFG_SENSORS_PROXIMITY_APDS9702 := yes
 
 # Bluetooth
+BOARD_HAVE_BLUETOOTH := true
+BOARD_HAVE_BLUETOOTH_QCOM := true
+BLUETOOTH_HCI_USE_MCT := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/sony/huashan/bluetooth
+
+# Power HAL
+TARGET_POWERHAL_VARIANT := qcom
+CM_POWERHAL_EXTENSION := qcom
 
 # RIL
 BOARD_PROVIDES_LIBRIL := true
+BOARD_RIL_CLASS := ../../../device/sony/huashan/ril/
+
+# Healthd
+BOARD_CHARGER_ENABLE_SUSPEND := true
+BOARD_CHARGER_SHOW_PERCENTAGE := true
+BACKLIGHT_PATH := /sys/devices/i2c-10/10-0040/leds/lcd-backlight1/brightness
+SECONDARY_BACKLIGHT_PATH := /sys/devices/i2c-10/10-0040/leds/lcd-backlight2/brightness
+RED_LED_PATH := /sys/devices/i2c-10/10-0047/leds/LED1_R/brightness
+GREEN_LED_PATH := /sys/devices/i2c-10/10-0047/leds/LED1_G/brightness
+BLUE_LED_PATH := /sys/devices/i2c-10/10-0047/leds/LED1_B/brightness
 
 # Needed for blobs
 TARGET_RELEASE_CPPFLAGS += -DNEEDS_VECTORIMPL_SYMBOLS
@@ -100,7 +147,18 @@ TARGET_USERIMAGES_USE_F2FS := true
 # Assert
 TARGET_OTA_ASSERT_DEVICE := C5302,C5303,C5306,huashan
 
+# Display HAL
+USE_OPENGL_RENDERER := true
+TARGET_USES_ION := true
+TARGET_USES_C2D_COMPOSITION := true
+
+TARGET_DISPLAY_USE_RETIRE_FENCE := true
+NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+OVERRIDE_RS_DRIVER := libRSDriver_adreno.so
+HAVE_ADRENO_SOURCE := false
+
 # Audio
+BOARD_USES_ALSA_AUDIO := true
 BOARD_USES_LEGACY_ALSA_AUDIO := true
 TARGET_USES_QCOM_COMPRESSED_AUDIO := true
 BOARD_HAVE_NEW_QCOM_CSDCLIENT := true
@@ -109,9 +167,8 @@ BOARD_USES_FLUENCE_INCALL := true
 BOARD_USES_SEPERATED_AUDIO_INPUT := true
 BOARD_USES_SEPERATED_VOICE_SPEAKER_MIC := true
 
-# FM Radio
-QCOM_FM_ENABLED := true
-AUDIO_FEATURE_ENABLED_FM := true
+# Font expansion
+EXTENDED_FONT_FOOTPRINT := true
 
 # Partition information
 BOARD_VOLD_MAX_PARTITIONS := 26
@@ -122,16 +179,17 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1056964608
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 2147483648
 
 # Include common SE policies
--include device/qcom/sepolicy/sepolicy.mk
+include device/qcom/sepolicy/sepolicy.mk
 
 BOARD_SEPOLICY_DIRS += \
     device/sony/huashan/sepolicy
 
 BOARD_SEPOLICY_UNION += \
     file_contexts \
+    bootanim.te \
     file.te \
+    healthd.te \
     hostapd.te \
-    illumination.te \
     init.te \
     init_shell.te \
     kernel.te \
@@ -144,18 +202,18 @@ BOARD_SEPOLICY_UNION += \
     property_contexts \
     radio.te \
     rild.te \
-    sdcardd.te \
     secchand.te \
     setup_fs.te \
     shell.te \
     surfaceflinger.te \
     system_app.te \
-    system_monitor.te \
     system_server.te \
     tad_static.te \
     ta_qmi_service.te \
+    thermanager.te \
     updatemiscta.te \
-    vold.te
+    vold.te \
+    zygote.te
 
 # inherit from the proprietary version
 -include vendor/sony/huashan/BoardConfigVendor.mk

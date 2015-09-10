@@ -12,18 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Perfd
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.vendor.extension_library=libqti-perfd-client.so
-
-# inherit from msm8960-common
-$(call inherit-product, device/sony/msm8960-common/msm8960.mk)
-
 DEVICE_PACKAGE_OVERLAYS += device/sony/huashan/overlay
 
 PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := xhdpi
-
+	
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
@@ -51,7 +44,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/fstab.qcom:recovery/root/fstab.qcom \
     $(LOCAL_PATH)/rootdir/init.recovery.qcom.rc:root/init.recovery.qcom.rc \
     $(LOCAL_PATH)/rootdir/system/etc/init.qcom.bt.sh:system/etc/init.qcom.bt.sh \
-    $(LOCAL_PATH)/rootdir/system/etc/init.qcom.fm.sh:system/etc/init.qcom.fm.sh \
     $(LOCAL_PATH)/rootdir/ueventd.qcom.rc:root/ueventd.qcom.rc
 
 # Additional sbin stuff
@@ -76,6 +68,14 @@ PRODUCT_COPY_FILES += \
 
 # Media
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/system/etc/media_profiles.xml:system/etc/media_profiles.xml
+
+# Media
+PRODUCT_COPY_FILES += \
+    frameworks/av/media/libstagefright/data/media_codecs_google_audio.xml:system/etc/media_codecs_google_audio.xml \
+    frameworks/av/media/libstagefright/data/media_codecs_google_telephony.xml:system/etc/media_codecs_google_telephony.xml \
+    frameworks/av/media/libstagefright/data/media_codecs_google_video.xml:system/etc/media_codecs_google_video.xml \
+    $(LOCAL_PATH)/rootdir/system/etc/media_codecs.xml:system/etc/media_codecs.xml \
     $(LOCAL_PATH)/rootdir/system/etc/media_profiles.xml:system/etc/media_profiles.xml
 
 # GPS
@@ -110,7 +110,10 @@ PRODUCT_COPY_FILES += \
 
 # Sony system_monitor
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/system/etc/sysmon.cfg:system/etc/sysmon.cfg
+    $(LOCAL_PATH)/rootdir/system/etc/thermanager.xml:system/etc/thermanager.xml
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/system/etc/hostapd/hostapd_default.conf:system/etc/hostapd/hostapd_default.conf
 
 # NFC Support
 PRODUCT_PACKAGES += \
@@ -119,6 +122,12 @@ PRODUCT_PACKAGES += \
     Nfc \
     Tag \
     com.android.nfc_extras
+
+# F2FS
+PRODUCT_PACKAGES += \
+    mkfs.f2fs \
+    fsck.f2fs \
+    fibmap.f2fs
 
 # Recovery
 PRODUCT_PACKAGES += \
@@ -132,6 +141,37 @@ else
 endif
 PRODUCT_COPY_FILES += \
     $(NFCEE_ACCESS_PATH):system/etc/nfcee_access.xml
+
+# Media
+PRODUCT_PACKAGES += \
+    qcmediaplayer
+
+PRODUCT_BOOT_JARS += \
+    qcmediaplayer
+
+# Omx
+PRODUCT_PACKAGES += \
+    libOmxAacEnc \
+    libOmxAmrEnc \
+    libOmxCore \
+    libOmxEvrcEnc \
+    libOmxQcelp13Enc \
+    libOmxVdec \
+    libOmxVenc \
+    libc2dcolorconvert \
+    libdashplayer \
+    libdivxdrmdecrypt \
+    libmm-omxcore \
+    libstagefrighthw
+
+# Display
+PRODUCT_PACKAGES += \
+    libgenlock \
+    libmemalloc \
+    liboverlay \
+    libqdutils \
+    libtilerenderer \
+    libI420colorconvert
 
 # QCOM Display
 PRODUCT_PACKAGES += \
@@ -149,13 +189,6 @@ PRODUCT_PACKAGES += \
     libaudio-resampler \
     tinymix
 
-# FM radio
-PRODUCT_PACKAGES += \
-    FM2 \
-    FMRecord \
-    libqcomfm_jni \
-    qcom.fmradio
-
 # Bluetooth
 PRODUCT_PACKAGES += \
     hci_qcomm_init
@@ -164,26 +197,56 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     camera.sony \
     camera.msm8960 \
+    camera.qcom \
     libmmcamera_interface \
     libmmcamera_interface2
+
+# Healthd
+PRODUCT_PACKAGES += \
+    charger_res_images
 
 # Force use old camera api
 PRODUCT_PROPERTY_OVERRIDES += \
     camera2.portability.force_api=1
 
+# Lights
+PRODUCT_PACKAGES += \
+    lights.msm8960
+
 # Sensors
 PRODUCT_PACKAGES += \
     sensors.msm8960
+	
+# Thermal management
+PRODUCT_PACKAGES += \
+    thermanager
 
 # Wifi service
 PRODUCT_PACKAGES += \
     mac-update \
     wcnss_service
 
+PRODUCT_PACKAGES += \
+    libQWiFiSoftApCfg \
+    libqsap_sdk \
+    libwpa_client \
+    hostapd \
+    dhcpcd.conf \
+    wpa_supplicant \
+    wpa_supplicant.conf
+
 # Misc
 PRODUCT_PACKAGES += \
     librs_jni \
     com.android.future.usb.accessory
+
+# Lights
+PRODUCT_PACKAGES += \
+    lights.msm8960
+
+# Power
+PRODUCT_PACKAGES += \
+    power.qcom
 
 # Set default USB interface
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
@@ -197,24 +260,43 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.ril.transmitpower=true \
     persist.radio.add_power_save=1 \
+    ro.telephony.ril_class=SonyRIL \
     rild.libpath=/system/lib/libril-qc-qmi-1.so
+
+PRODUCT_PROPERTY_OVERRIDES += \
+     dalvik.vm.dex2oat-filter=interpret-only \
+     dalvik.vm.image-dex2oat-filter=speed
+	 
+# Perfd
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.extension_library=libqti-perfd-client.so
 
 # Display
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=320 \
-    debug.composition.type=c2d
+    debug.composition.type=c2d \
+    persist.hwc.mdpcomp.enable=true
+
+# Doze mode
+PRODUCT_PACKAGES += \
+    SensorsDoze
 
 # DRM
 PRODUCT_PROPERTY_OVERRIDES += \
     drm.service.enabled=true
 
-# Audio
+# Audio	
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.audio.fluence.mode=endfire \
     persist.audio.handset.mic=digital \
     persist.audio.lowlatency.rec=false \
+    qcom.hw.aac.encoder=true \
     af.resampler.quality=255 \
     ro.qc.sdk.audio.fluencetype=fluence
+
+# QCOM
+PRODUCT_PROPERTY_OVERRIDES += \
+    com.qc.hardware=true
 
 # QCOM Location
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -227,6 +309,12 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.qualcomm.bt.hci_transport=smd \
     qcom.bt.le_dev_pwr_class=1
+
+# WiFi
+PRODUCT_PROPERTY_OVERRIDES += \
+    wlan.driver.ath=0 \
+    wifi.interface=wlan0 \
+    wifi.supplicant_scan_interval=15
 
 # Do not power down SIM card when modem is sent to Low Power Mode.
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -241,7 +329,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196608
 
 # call dalvik heap config
-$(call inherit-product-if-exists, frameworks/native/build/phone-xhdpi-1024-dalvik-heap.mk)
+$(call inherit-product, frameworks/native/build/phone-xhdpi-1024-dalvik-heap.mk)
 
 # Include non-opensource parts
 $(call inherit-product, vendor/sony/huashan/huashan-vendor.mk)

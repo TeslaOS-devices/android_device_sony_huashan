@@ -3,3 +3,4 @@ type radio_efs_file, fs_type;
 
 # Vibrator
 type sysfs_vibrator, fs_type, sysfs_type;
+
